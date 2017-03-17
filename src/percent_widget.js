@@ -2,8 +2,11 @@ const d3 = require('d3');
 
 class PercentWidget {
   constructor(parentSelector, percentage, options = {}) {
-    const radius = options.radius || 100;
-    const thickness = options.thickness || 40;
+    this.percentage = percentage;
+    this.radius = options.radius || 100;
+    this.thickness = options.thickness || 40;
+    this.innerRadius = this.radius - this.thickness;
+
     const borderThickness = options.borderThickness || 5;
     const pointerSize = options.pointerSize || 6;
     const labelSize = options.labelSize || 25;
@@ -13,7 +16,7 @@ class PercentWidget {
     const backgroundColor = options.backgroundColor || '#eee';
     const fontColor = options.fontColor || '#666';
 
-    const width = (radius + borderThickness) * 2;
+    const width = (this.radius + borderThickness) * 2;
     const height = width;
 
     const parent = d3.select(parentSelector);
@@ -22,8 +25,8 @@ class PercentWidget {
     let backgroundArc = d3.arc()
       .startAngle(0)
       .endAngle(2 * Math.PI)
-      .innerRadius(radius-thickness)
-      .outerRadius(radius);
+      .innerRadius(this.innerRadius)
+      .outerRadius(this.radius);
 
     canvas.append('path')
       .attr('transform', `translate(${width/2}, ${height/2})`)
@@ -33,10 +36,10 @@ class PercentWidget {
     let mainArc = d3.arc()
       .startAngle(0)
       .endAngle(2 * Math.PI * percentage / 100)
-      .innerRadius(radius-thickness)
-      .outerRadius(radius);
+      .innerRadius(this.innerRadius)
+      .outerRadius(this.radius);
 
-    canvas.append('path')
+    this.mainArcPath = canvas.append('path')
       .attr('transform', `translate(${width/2}, ${height/2})`)
       .attr('d', mainArc)
       .attr('fill', fillColor);
@@ -44,8 +47,8 @@ class PercentWidget {
     let arcBorder = d3.arc()
       .startAngle(0)
       .endAngle(2 * Math.PI * percentage / 100)
-      .innerRadius(radius - borderThickness / 2)
-      .outerRadius(radius + borderThickness / 2);
+      .innerRadius(this.radius - borderThickness / 2)
+      .outerRadius(this.radius + borderThickness / 2);
 
     canvas.append('path')
       .attr('transform', `translate(${width/2}, ${height/2})`)
@@ -54,14 +57,14 @@ class PercentWidget {
 
     canvas.append('circle')
       .attr('cx', 0)
-      .attr('cy', -radius)
+      .attr('cy', -this.radius)
       .attr('r', borderThickness / 2)
       .attr('fill', borderColor)
       .attr('transform', `translate(${width/2}, ${height/2})`);
 
     canvas.append('circle')
       .attr('cx', 0)
-      .attr('cy', -radius)
+      .attr('cy', -this.radius)
       .attr('r', borderThickness / 2)
       .attr('fill', borderColor)
       .attr('transform', `translate(${width/2}, ${height/2}) rotate(${360 * percentage / 100})`);
@@ -69,7 +72,7 @@ class PercentWidget {
     canvas.append('polygon')
       .attr('points', `0,-${pointerSize} ${pointerSize},${pointerSize}, -${pointerSize},${pointerSize}`)
       .attr('fill', borderColor)
-      .attr('transform', `translate(${width/2}, ${height/2}) rotate(${360 * percentage / 100}) translate(0, -${radius-thickness+pointerSize})`);
+      .attr('transform', `translate(${width/2}, ${height/2}) rotate(${360 * percentage / 100}) translate(0, -${this.innerRadius+pointerSize})`);
 
     canvas.append('text')
       .attr('x', width / 2)
@@ -79,6 +82,34 @@ class PercentWidget {
       .attr('font-size', `${labelSize}px`)
       .attr('fill', fontColor)
       .text(`${percentage}%`);
+  }
+
+  update(newPercentage) {
+    let innerRadius = this.innerRadius;
+    let radius = this.radius;
+    let oldPercentage = this.percentage;
+    let tweenFunction = this._arcTween;
+
+    const duration = 1500;
+
+    this.mainArcPath
+      .transition()
+      .duration(duration)
+      .attrTween('d', function() {
+        var newArc = d3.arc()
+          .startAngle(0)
+          .innerRadius(innerRadius)
+          .outerRadius(radius);
+        return tweenFunction(newArc, oldPercentage, newPercentage);
+      });
+  }
+
+  _arcTween(arc, oldPercentage, newPercentage) {
+    let percentageDiff = newPercentage - oldPercentage;
+    return function(t) {
+      arc.endAngle(2 * Math.PI * (oldPercentage + percentageDiff * t) / 100)
+      return arc();
+    }
   }
 }
 
