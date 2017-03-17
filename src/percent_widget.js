@@ -77,7 +77,7 @@ class PercentWidget {
       .attr('fill', borderColor)
       .attr('transform', `translate(0, -${this.innerRadius+this.pointerSize})`);
 
-    canvas.append('text')
+    this.percentLabel = canvas.append('text')
       .attr('x', this.width / 2)
       .attr('y', this.height / 2 + labelSize / 2)
       .attr('text-anchor', 'middle')
@@ -96,6 +96,7 @@ class PercentWidget {
     let pointerSize = this.pointerSize;
     let width = this.width;
     let height = this.height;
+    this.percentage = newPercentage;
 
     const duration = 1500;
 
@@ -129,6 +130,18 @@ class PercentWidget {
           return `translate(${width/2}, ${height/2}) rotate(${360 * (oldPercentage + (newPercentage - oldPercentage) * t) / 100})`;
         }
       });
+
+    var percentageFormat = d3.format(".0%");
+    var percentLabel = this.percentLabel;
+    this.percentLabel
+      .transition()
+      .duration(duration)
+      .tween('text', function() {
+        return function(t) {
+          percentLabel.text(percentageFormat((oldPercentage + (newPercentage - oldPercentage) * t) / 100));
+        }
+      })
+      //.text(`${newPercentage}%`);
   }
 
   _arcTween(arc, oldPercentage, newPercentage) {
