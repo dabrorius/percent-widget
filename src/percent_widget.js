@@ -55,6 +55,9 @@ class PercentWidget {
       .attr('d', arcBorder)
       .attr('fill', borderColor);
 
+    this.endMarkers = canvas.append('g')
+      .attr('transform', `translate(${this.width/2}, ${this.height/2}) rotate(${360 * percentage / 100})`);
+
     canvas.append('circle')
       .attr('cx', 0)
       .attr('cy', -this.radius)
@@ -62,17 +65,17 @@ class PercentWidget {
       .attr('fill', borderColor)
       .attr('transform', `translate(${this.width/2}, ${this.height/2})`);
 
-    canvas.append('circle')
+    this.endMarkers.append('circle')
       .attr('cx', 0)
-      .attr('cy', -this.radius)
+      .attr('cy', 0)
       .attr('r', this.borderThickness / 2)
       .attr('fill', borderColor)
-      .attr('transform', `translate(${this.width/2}, ${this.height/2}) rotate(${360 * percentage / 100})`);
+      .attr('transform', `translate(0, -${this.radius})`);
 
-    this.pointer = canvas.append('polygon')
+    this.pointer = this.endMarkers.append('polygon')
       .attr('points', `0,-${this.pointerSize} ${this.pointerSize},${this.pointerSize}, -${this.pointerSize},${this.pointerSize}`)
       .attr('fill', borderColor)
-      .attr('transform', `translate(${this.width/2}, ${this.height/2}) rotate(${360 * percentage / 100}) translate(0, -${this.innerRadius+this.pointerSize})`);
+      .attr('transform', `translate(0, -${this.innerRadius+this.pointerSize})`);
 
     canvas.append('text')
       .attr('x', this.width / 2)
@@ -118,12 +121,12 @@ class PercentWidget {
         return tweenFunction(newArcBorder, oldPercentage, newPercentage);
       });
 
-    this.pointer
+    this.endMarkers
       .transition()
       .duration(duration)
       .attrTween('transform', function() {
         return function(t) {
-          return `translate(${width/2}, ${height/2}) rotate(${360 * (oldPercentage + (newPercentage - oldPercentage) * t) / 100}) translate(0, -${innerRadius+pointerSize})`;
+          return `translate(${width/2}, ${height/2}) rotate(${360 * (oldPercentage + (newPercentage - oldPercentage) * t) / 100})`;
         }
       });
   }
