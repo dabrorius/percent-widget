@@ -1,11 +1,12 @@
 const d3 = require('d3');
 
 class PercentWidget {
-  constructor(parentSelector, options = {}) {
+  constructor(parentSelector, percentage = 0, options = {}) {
     const parent = d3.select(parentSelector);
 
+    this.percentage = percentage;
+
     this.settings = {
-      percentage: 50,
       radius: 100,
       thickness: 40,
       borderThickness: 5,
@@ -16,6 +17,7 @@ class PercentWidget {
       backgroundColor: '#eee',
       fontColor: '#666'
     }
+    Object.assign(this.settings, options);
     let settings = this.settings;
 
     this.settings.innerRadius = settings.radius - settings.thickness;
@@ -37,7 +39,7 @@ class PercentWidget {
 
     let mainArc = d3.arc()
       .startAngle(0)
-      .endAngle(2 * Math.PI * settings.percentage / 100)
+      .endAngle(2 * Math.PI * percentage / 100)
       .innerRadius(settings.innerRadius)
       .outerRadius(settings.radius);
 
@@ -48,7 +50,7 @@ class PercentWidget {
 
     let arcBorder = d3.arc()
       .startAngle(0)
-      .endAngle(2 * Math.PI * settings.percentage / 100)
+      .endAngle(2 * Math.PI * percentage / 100)
       .innerRadius(settings.radius - settings.borderThickness / 2)
       .outerRadius(settings.radius + settings.borderThickness / 2);
 
@@ -58,7 +60,7 @@ class PercentWidget {
       .attr('fill', settings.borderColor);
 
     this.endMarkers = canvas.append('g')
-      .attr('transform', `translate(${settings.width/2}, ${settings.height/2}) rotate(${360 * settings.percentage / 100})`);
+      .attr('transform', `translate(${settings.width/2}, ${settings.height/2}) rotate(${360 * percentage / 100})`);
 
     canvas.append('circle')
       .attr('cx', 0)
@@ -86,21 +88,17 @@ class PercentWidget {
       .attr('font-family', 'verdana')
       .attr('font-size', `${settings.labelSize}px`)
       .attr('fill', settings.fontColor)
-      .text(`${settings.percentage}%`);
+      .text(`${percentage}%`);
   }
 
   update(newPercentage) {
-    let innerRadius = this.innerRadius;
-    let radius = this.radius;
+    const duration = 1500;
+
     let oldPercentage = this.percentage;
-    let borderThickness = this.borderThickness;
-    let tweenFunction = this._arcTween;
-    let pointerSize = this.pointerSize;
-    let width = this.width;
-    let height = this.height;
     this.percentage = newPercentage;
 
-    const duration = 1500;
+    let settings = this.settings;
+    let tweenFunction = this._arcTween;
 
     this.mainArcPath
       .transition()
@@ -108,8 +106,8 @@ class PercentWidget {
       .attrTween('d', function() {
         var newArc = d3.arc()
           .startAngle(0)
-          .innerRadius(innerRadius)
-          .outerRadius(radius);
+          .innerRadius(settings.innerRadius)
+          .outerRadius(settings.radius);
         return tweenFunction(newArc, oldPercentage, newPercentage);
       });
 
@@ -119,8 +117,8 @@ class PercentWidget {
       .attrTween('d', function() {
         var newArcBorder = d3.arc()
           .startAngle(0)
-          .innerRadius(radius - borderThickness / 2)
-          .outerRadius(radius + borderThickness / 2);
+          .innerRadius(settings.radius - settings.borderThickness / 2)
+          .outerRadius(settings.radius + settings.borderThickness / 2);
         return tweenFunction(newArcBorder, oldPercentage, newPercentage);
       });
 
@@ -129,7 +127,7 @@ class PercentWidget {
       .duration(duration)
       .attrTween('transform', function() {
         return function(t) {
-          return `translate(${width/2}, ${height/2}) rotate(${360 * (oldPercentage + (newPercentage - oldPercentage) * t) / 100})`;
+          return `translate(${settings.width/2}, ${settings.height/2}) rotate(${360 * (oldPercentage + (newPercentage - oldPercentage) * t) / 100})`;
         }
       });
 
